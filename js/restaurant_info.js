@@ -22,7 +22,7 @@ initMap = () => {
         scrollWheelZoom: false
       });
       L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.jpg70?access_token={mapboxToken}', {
-        mapboxToken: '<your MAPBOX API KEY HERE>',
+        mapboxToken: 'pk.eyJ1IjoieWdhbGFudGVyIiwiYSI6ImNqaWxzOGIwYzAxNzkzbG85cmRhZjU4ZnUifQ.J2fvK2vYB2xZIWGDv_46Zw',
         maxZoom: 18,
         attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
           '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
@@ -89,6 +89,8 @@ fillRestaurantHTML = (restaurant = self.restaurant) => {
   const image = document.getElementById('restaurant-img');
   image.className = 'restaurant-img'
   image.src = DBHelper.imageUrlForRestaurant(restaurant);
+  image.setAttribute('alt', restaurant.name)
+  image.setAttribute('title', restaurant.name)
 
   const cuisine = document.getElementById('restaurant-cuisine');
   cuisine.innerHTML = restaurant.cuisine_type;
@@ -111,11 +113,14 @@ fillRestaurantHoursHTML = (operatingHours = self.restaurant.operating_hours) => 
 
     const day = document.createElement('td');
     day.innerHTML = key;
+    day.setAttribute("aria-label", key + " open");
     row.appendChild(day);
 
     const time = document.createElement('td');
-    time.innerHTML = operatingHours[key];
+    time.innerHTML = operatingHours[key].replace(",", "<br/>");
+    time.setAttribute("aria-label", operatingHours[key].replace(/\-/g, "to"));
     row.appendChild(time);
+    row.setAttribute("tabindex", 0);
 
     hours.appendChild(row);
   }
@@ -128,11 +133,13 @@ fillReviewsHTML = (reviews = self.restaurant.reviews) => {
   const container = document.getElementById('reviews-container');
   const title = document.createElement('h2');
   title.innerHTML = 'Reviews';
+  title.setAttribute("tabindex",0);
   container.appendChild(title);
 
   if (!reviews) {
     const noReviews = document.createElement('p');
     noReviews.innerHTML = 'No reviews yet!';
+    noReviews.setAttribute("tabindex",0);
     container.appendChild(noReviews);
     return;
   }
@@ -148,20 +155,29 @@ fillReviewsHTML = (reviews = self.restaurant.reviews) => {
  */
 createReviewHTML = (review) => {
   const li = document.createElement('li');
+
+  const header = document.createElement('header');
+
   const name = document.createElement('p');
   name.innerHTML = review.name;
-  li.appendChild(name);
+  name.setAttribute("tabindex",0)
+  header.appendChild(name);
 
   const date = document.createElement('p');
   date.innerHTML = review.date;
-  li.appendChild(date);
+  date.setAttribute("tabindex",0)
+  header.appendChild(date);
+
+  li.appendChild(header);
 
   const rating = document.createElement('p');
   rating.innerHTML = `Rating: ${review.rating}`;
+  rating.setAttribute("tabindex",0);
   li.appendChild(rating);
 
   const comments = document.createElement('p');
   comments.innerHTML = review.comments;
+  comments.setAttribute("tabindex",0);
   li.appendChild(comments);
 
   return li;
@@ -174,6 +190,7 @@ fillBreadcrumb = (restaurant=self.restaurant) => {
   const breadcrumb = document.getElementById('breadcrumb');
   const li = document.createElement('li');
   li.innerHTML = restaurant.name;
+  li.setAttribute("aria-hidden","true");
   breadcrumb.appendChild(li);
 }
 
@@ -192,3 +209,19 @@ getParameterByName = (name, url) => {
     return '';
   return decodeURIComponent(results[2].replace(/\+/g, ' '));
 }
+
+
+// bypassing map in keyboard navigation
+document.querySelector("#home").addEventListener("keydown",function(event){
+  if (event.keyCode == 9 && !event.shiftKey) {
+    event.preventDefault();
+    document.querySelector("#restaurant-name").focus();
+  }
+})
+
+document.querySelector("#restaurant-name").addEventListener("keydown",function(event){
+  if (event.keyCode == 9 && event.shiftKey) {
+    event.preventDefault();
+    document.querySelector("#home").focus();
+  }
+})
